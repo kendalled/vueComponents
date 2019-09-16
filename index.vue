@@ -8,7 +8,7 @@
           Select a quantity to begin.
         </p>
         <p v-else class="text-gray-800">
-          {{ value.qty }} Emails Selected.
+          {{ value.qty }} Emails Requested.
         </p>
       </div>
       <div class="w-1/3 h-6 text-center mb-4" />
@@ -47,11 +47,13 @@
         />
       </div>
       <div class="animated flex-1 w-1/3 h-16 text-center -mt-4">
-        <img style="max-width: 200px; height: auto;" class="h-12 mx-auto" src="~/static/logo.png" />
-        <p class="pt-3">Email database and mass mailer</p>
+        <img style="max-width: 200px; height: auto;" class="h-12 mx-auto" src="~/static/logo.png">
+        <p class="pt-3">
+          Email database and mass mailer
+        </p>
       </div>
       <div class="flex-1 text-gray-700 text-center">
-        <SendEmails v-if="readyToSend" :audience="testData" :ids="deleteID" />
+        <SendEmails v-if="readyToSend" :audience="doc" :ids="ids" />
         <button v-else class="cursor-default w-5/6 bg-gray-500 text-white px-5 pt-2 pb-1 rounded-full focus:outline-none">
           Send Email Campaign
         </button>
@@ -71,10 +73,7 @@
       </div>
     </div>
     <p>
-      {{ testData }}
-    </p>
-    <p>
-      {{ deleteID }}
+      {{ ids.length }} Unique ID's.
     </p>
   </div>
 </template>
@@ -135,23 +134,14 @@ export default {
       doc: [],
       waiting: [],
       ids: [],
-      testData: [],
-      deleteID: []
+      testData: []
     }
   },
   async asyncData ({ app, params, error }) {
     const ref = fireDb.collection('Emails').where('substatus', '==', false)
-    // remove line below
-    const ref2 = fireDb.collection('Emails').where('email', '==', 'cori@lapelpinsandcoins.com')
-    const ref3 = fireDb.collection('Emails').where('email', '==', 'snicolenyiri@aol.com')
-    const ref4 = fireDb.collection('Emails').where('email', '==', 'kendallkj00@gmail.com')
     let data2
-    let data3
-    let testID
     try {
       data2 = []
-      data3 = []
-      testID = []
       await ref.get().then(function (querySnapshot) {
         querySnapshot.forEach(function (doc) {
         // doc.data() is never undefined for query doc snapshots
@@ -159,38 +149,12 @@ export default {
           data2.push(doc.data())
         })
       })
-      await ref2.get().then(function (querySnapshot) {
-        querySnapshot.forEach(function (doc) {
-        // doc.data() is never undefined for query doc snapshots
-        // console.log(doc.id, ' => ', doc.data())
-          data3.push(doc.data())
-          testID.push(doc.id)
-        })
-      })
-      await ref3.get().then(function (querySnapshot) {
-        querySnapshot.forEach(function (doc) {
-        // doc.data() is never undefined for query doc snapshots
-        // console.log(doc.id, ' => ', doc.data())
-          data3.push(doc.data())
-          testID.push(doc.id)
-        })
-      })
-      await ref4.get().then(function (querySnapshot) {
-        querySnapshot.forEach(function (doc) {
-        // doc.data() is never undefined for query doc snapshots
-        // console.log(doc.id, ' => ', doc.data())
-          data3.push(doc.data())
-          testID.push(doc.id)
-        })
-      })
     } catch (e) {
       // TODO: error handling
       console.error(e)
     }
     return {
-      waiting: data2,
-      testData: data3,
-      deleteID: testID
+      waiting: data2
     }
   },
   methods: {
@@ -223,7 +187,15 @@ export default {
           // TODO: error handling
           console.error(e)
         }
-        this.doc = data
+        const filteredArr = data.reduce((acc, current) => {
+          const x = acc.find(item => item.email === current.email)
+          if (!x) {
+            return acc.concat([current])
+          } else {
+            return acc
+          }
+        }, [])
+        this.doc = filteredArr
         this.ids = uniqueID
       }
     },
